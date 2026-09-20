@@ -25,5 +25,4 @@ public class SpringBootApiApplication {
 			storageService.init();
 		});
 	}
-
 }

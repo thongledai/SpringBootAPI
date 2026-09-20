@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản trị - AJAX RESTful API</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"
+        integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Boxicons -->
+    <link href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        var contextPath = "";
+    </script>
+</head>
+
+<body>
+
+    <div th:replace="~{common/header :: header}"></div>
+
+    <main class="container-fluid px-4 py-3">
+
+        <!-- ========================================== -->
+        <!-- PHẦN 1: QUẢN LÝ CATEGORY BẰNG AJAX & API -->
+        <!-- ========================================== -->
+        <section class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="text-primary"><i class="fas fa-list me-2"></i>Quản lý Danh mục (Categories)</h3>
+                <button class="btn btn-success" onclick="showCreateNewCategoryModal()">
+                    <i class="fas fa-plus me-1"></i>Thêm Category Ajax
+                </button>
+            </div>
+
+            <div class="table-responsive bg-white rounded shadow-sm p-3">
+                <table class="table table-striped table-hover align-middle mb-0" id="categoryTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width: 80px;">Id</th>
+                            <th style="width: 120px;">Icon</th>
+                            <th>Tên Category</th>
+                            <th style="width: 150px;" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoryTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Modal Thêm Category -->
+        <div class="modal fade" tabindex="-1" role="dialog" id="createCategoryModal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form id="addCategory" method="post" enctype="multipart/form-data">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Add Category</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="new_categoryname" class="form-label font-weight-bold">Category Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="new_categoryname" name="categoryName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="new_icon" class="form-label">Icon</label>
+                                <input type="file" class="form-control" id="new_icon" name="icon">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Add</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Cập nhật Category -->
+        <div class="modal fade" tabindex="-1" role="dialog" id="updateCategoryInfoModal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Update Category</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Thông tin hiện tại -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="far fa-address-card me-1"></i>Thông tin hiện tại</h6>
+                            </div>
+                            <div class="card-body pb-1">
+                                <p id="updateCategoryInfoModalId" class="mb-1 fw-bold"></p>
+                                <p id="updateCategoryInfoModalName" class="mb-1"></p>
+                                <p id="updateCategoryInfoModalIcon" class="mb-1"></p>
+                            </div>
+                        </div>
+
+                        <!-- Form cập nhật -->
+                        <form id="updateCategory" method="post" enctype="multipart/form-data">
+                            <input type="hidden" id="categoryId_up" name="categoryId">
+                            <div class="mb-3">
+                                <label for="categoryName_up" class="form-label font-weight-bold">Tên Category mới <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="categoryName_up" name="categoryName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="icon_up" class="form-label">Icon mới (để trống nếu không đổi)</label>
+                                <input type="file" class="form-control" id="icon_up" name="icon">
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-sync-alt me-1"></i>Cập nhật</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-5">
+
+        <!-- ========================================== -->
+        <!-- PHẦN 2: QUẢN LÝ PRODUCT BẰNG AJAX & API -->
+        <!-- ========================================== -->
+        <section class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="text-success"><i class="fas fa-boxes me-2"></i>Quản lý Sản phẩm (Products)</h3>
+                <button class="btn btn-success" onclick="showCreateNewProductModal()">
+                    <i class="fas fa-plus me-1"></i>Thêm Product Ajax
+                </button>
+            </div>
+
+            <div class="table-responsive bg-white rounded shadow-sm p-3">
+                <table class="table table-striped table-hover align-middle mb-0" id="productTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width: 70px;">Id</th>
+                            <th style="width: 100px;">Ảnh</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Đơn giá</th>
+                            <th>Giảm giá</th>
+                            <th>SL</th>
+                            <th>Category</th>
+                            <th>Trạng thái</th>
+                            <th style="width: 150px;" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Modal Thêm Product -->
+        <div class="modal fade" tabindex="-1" role="dialog" id="createProductModal">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <form id="addProductForm" method="post" enctype="multipart/form-data">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Add Product</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body row g-3">
+                            <div class="col-md-6">
+                                <label for="new_productName" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="new_productName" name="productName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="new_categoryId" class="form-label">Category <span class="text-danger">*</span></label>
+                                <select class="form-select category-select" id="new_categoryId" name="categoryId" required></select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="new_unitPrice" class="form-label">Đơn giá (VNĐ) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control" id="new_unitPrice" name="unitPrice" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="new_discount" class="form-label">Giảm giá (%)</label>
+                                <input type="number" step="0.01" class="form-control" id="new_discount" name="discount" value="0">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="new_quantity" class="form-label">Số lượng <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="new_quantity" name="quantity" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="new_imageFile" class="form-label">Hình ảnh sản phẩm</label>
+                                <input type="file" class="form-control" id="new_imageFile" name="imageFile">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="new_status" class="form-label">Trạng thái</label>
+                                <select class="form-select" id="new_status" name="status">
+                                    <option value="1">Đang bán</option>
+                                    <option value="0">Ngừng bán</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label for="new_description" class="form-label">Mô tả sản phẩm</label>
+                                <textarea class="form-control" id="new_description" name="description" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Add</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Cập nhật Product -->
+        <div class="modal fade" tabindex="-1" role="dialog" id="updateProductInfoModal">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Update Product</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Thông tin hiện tại -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="far fa-address-card me-1"></i>Thông tin hiện tại</h6>
+                            </div>
+                            <div class="card-body pb-1 row">
+                                <div class="col-md-6">
+                                    <p id="updateProductInfoId" class="mb-1 fw-bold"></p>
+                                    <p id="updateProductInfoName" class="mb-1"></p>
+                                    <p id="updateProductInfoPrice" class="mb-1"></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p id="updateProductInfoQuantity" class="mb-1"></p>
+                                    <p id="updateProductInfoCategory" class="mb-1"></p>
+                                    <p id="updateProductInfoImages" class="mb-1"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form cập nhật -->
+                        <form id="updateProductForm" method="post" enctype="multipart/form-data">
+                            <input type="hidden" id="productId_up" name="productId">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="productName_up" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="productName_up" name="productName" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="categoryId_up_select" class="form-label">Category <span class="text-danger">*</span></label>
+                                    <select class="form-select category-select" id="categoryId_up_select" name="categoryId" required></select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="unitPrice_up" class="form-label">Đơn giá (VNĐ) <span class="text-danger">*</span></label>
+                                    <input type="number" step="0.01" class="form-control" id="unitPrice_up" name="unitPrice" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="discount_up" class="form-label">Giảm giá (%)</label>
+                                    <input type="number" step="0.01" class="form-control" id="discount_up" name="discount" value="0">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="quantity_up" class="form-label">Số lượng <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="quantity_up" name="quantity" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="imageFile_up" class="form-label">Ảnh mới (để trống nếu không đổi)</label>
+                                    <input type="file" class="form-control" id="imageFile_up" name="imageFile">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="status_up" class="form-label">Trạng thái</label>
+                                    <select class="form-select" id="status_up" name="status">
+                                        <option value="1">Đang bán</option>
+                                        <option value="0">Ngừng bán</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label for="description_up" class="form-label">Mô tả sản phẩm</label>
+                                    <textarea class="form-control" id="description_up" name="description" rows="2"></textarea>
+                                </div>
+                                <div class="col-12 d-grid mt-3">
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-sync-alt me-1"></i>Cập nhật Product</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div th:replace="~{common/footer :: footer}"></div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+
+    <!-- ========================================== -->
+    <!-- SCRIPT XỬ LÝ AJAX THEO HƯỚNG DẪN LAB -->
+    <!-- ========================================== -->
+    <script type="text/javascript">
+        var categoryList = [];
+        var productList = [];
+
+        $(document).ready(function () {
+            loadCategories();
+            loadProducts();
+        });
+
+        /* =========================================
+           1. XỬ LÝ CATEGORY (GET, ADD, PUT, DELETE)
+           ========================================= */
+
+        /* 1.1 Get All Categories */
+        function loadCategories() {
+            $.getJSON(contextPath + '/api/category', function (json) {
+                var list = json.body || json;
+                categoryList = list;
+                var tr = [];
+                var options = ['<option value="">-- Chọn Category --</option>'];
+
+                for (var i = 0; i < list.length; i++) {
+                    var item = list[i];
+                    var iconHtml = item.icon ? '<img src="/api/category/images/' + item.icon + '" style="width:50px" class="img-thumbnail" alt="">' : '<span class="text-muted">No icon</span>';
+                    tr.push('<tr>');
+                    tr.push('<td>' + item.categoryId + '</td>');
+                    tr.push('<td>' + iconHtml + '</td>');
+                    tr.push('<td>' + item.categoryName + '</td>');
+                    tr.push('<td class="text-center">' +
+                        '<a href="javascript:void(0)" onclick="showEditCategoryByIndex(' + i + ')" class="btn btn-sm btn-outline-warning me-1" title="Sửa"><i class="fa fa-edit"></i></a>' +
+                        '<a href="javascript:void(0)" onclick="deleteCategory(' + item.categoryId + ')" class="btn btn-sm btn-outline-danger" title="Xóa"><i class="fa fa-trash"></i></a>' +
+                        '</td>');
+                    tr.push('</tr>');
+
+                    options.push('<option value="' + item.categoryId + '">' + item.categoryName + '</option>');
+                }
+
+                $('#categoryTableBody').html(tr.join(''));
+                $('.category-select').html(options.join(''));
+            });
+        }
+
+        /* 1.2 Show Modal Add Category */
+        function showCreateNewCategoryModal() {
+            $('#addCategory')[0].reset();
+            var modal = new bootstrap.Modal(document.getElementById('createCategoryModal'));
+            modal.show();
+        }
+
+        /* 1.3 Submit Add Category (POST) */
+        $("form#addCategory").submit(function (e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            $.ajax({
+                url: contextPath + '/api/category/addCategory',
+                type: 'POST',
+                data: formData,
+                success: function (data) {
+                    alert('Thêm Category thành công!');
+                    bootstrap.Modal.getInstance(document.getElementById('createCategoryModal')).hide();
+                    loadCategories();
+                },
+                error: function (xhr) {
+                    alert('Lỗi: ' + xhr.responseText);
+                },
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+        });
+
+        /* 1.4 Show Modal Edit Category */
+        function showEditCategoryByIndex(index) {
+            var c = categoryList[index];
+            if (!c) return;
+
+            $('#updateCategoryInfoModalId').text("Category ID: " + c.categoryId);
+            $('#updateCategoryInfoModalName').text("Category Name: " + c.categoryName);
+            $('#updateCategoryInfoModalIcon').text("Icon: " + (c.icon || 'Chưa có'));
+
+            $('#categoryId_up').val(c.categoryId);
+            $('#categoryName_up').val(c.categoryName);
+            $('#icon_up').val('');
+
+            var modal = new bootstrap.Modal(document.getElementById('updateCategoryInfoModal'));
+            modal.show();
+        }
+
+        /* 1.5 Submit Update Category (PUT) */
+        $("form#updateCategory").submit(function (e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            $.ajax({
+                url: contextPath + '/api/category/updateCategory',
+                type: 'POST',
+                data: formData,
+                success: function (data) {
+                    alert('Cập nhật Category thành công!');
+                    bootstrap.Modal.getInstance(document.getElementById('updateCategoryInfoModal')).hide();
+                    loadCategories();
+                },
+                error: function (xhr) {
+                    alert('Lỗi: ' + xhr.responseText);
+                },
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+        });
+
+        /* 1.6 Delete Category (DELETE) */
+        function deleteCategory(id) {
+            if (confirm('Bạn có chắc chắn muốn xóa Category ID: ' + id + ' không?')) {
+                $.ajax({
+                    type: "DELETE",
+                    url: contextPath + '/api/category/deleteCategory?categoryId=' + id,
+                    success: function (res) {
+                        alert('Xóa Category thành công!');
+                        loadCategories();
+                    },
+                    error: function (xhr) {
+                        alert('Lỗi xóa Category: ' + xhr.responseText);
+                    }
+                });
+            }
+        }
+
+
+        /* =========================================
+           2. XỬ LÝ PRODUCT (GET, ADD, PUT, DELETE)
+           ========================================= */
+
+        /* 2.1 Get All Products */
+        function loadProducts() {
+            $.getJSON(contextPath + '/api/product', function (json) {
+                var list = json.body || json;
+                productList = list;
+                var tr = [];
+
+                for (var i = 0; i < list.length; i++) {
+                    var p = list[i];
+                    var imgHtml = p.images ? '<img src="/api/product/images/' + p.images + '" style="width:50px" class="img-thumbnail" alt="">' : '<span class="text-muted">No img</span>';
+                    var cateName = p.category ? p.category.categoryName : '<span class="text-muted">N/A</span>';
+                    var statusBadge = p.status == 1 ? '<span class="badge bg-success">Đang bán</span>' : '<span class="badge bg-secondary">Ngừng bán</span>';
+
+                    tr.push('<tr>');
+                    tr.push('<td>' + p.productId + '</td>');
+                    tr.push('<td>' + imgHtml + '</td>');
+                    tr.push('<td><strong>' + p.productName + '</strong></td>');
+                    tr.push('<td>' + Number(p.unitPrice).toLocaleString() + ' đ</td>');
+                    tr.push('<td>' + (p.discount || 0) + '%</td>');
+                    tr.push('<td>' + p.quantity + '</td>');
+                    tr.push('<td>' + cateName + '</td>');
+                    tr.push('<td>' + statusBadge + '</td>');
+                    tr.push('<td class="text-center">' +
+                        '<a href="javascript:void(0)" onclick="showEditProductByIndex(' + i + ')" class="btn btn-sm btn-outline-warning me-1" title="Sửa"><i class="fa fa-edit"></i></a>' +
+                        '<a href="javascript:void(0)" onclick="deleteProduct(' + p.productId + ')" class="btn btn-sm btn-outline-danger" title="Xóa"><i class="fa fa-trash"></i></a>' +
+                        '</td>');
+                    tr.push('</tr>');
+                }
+
+                $('#productTableBody').html(tr.join(''));
+            });
+        }
+
+        /* 2.2 Show Modal Add Product */
+        function showCreateNewProductModal() {
+            $('#addProductForm')[0].reset();
+            var modal = new bootstrap.Modal(document.getElementById('createProductModal'));
+            modal.show();
+        }
+
+        /* 2.3 Submit Add Product (POST) */
+        $("form#addProductForm").submit(function (e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            if (!formData.get('discount')) {
+                formData.set('discount', '0');
+            }
+
+            $.ajax({
+                url: contextPath + '/api/product/addProduct',
+                type: 'POST',
+                data: formData,
+                success: function (data) {
+                    alert('Thêm Product thành công!');
+                    bootstrap.Modal.getInstance(document.getElementById('createProductModal')).hide();
+                    loadProducts();
+                },
+                error: function (xhr) {
+                    alert('Lỗi: ' + xhr.responseText);
+                },
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+        });
+
+        /* 2.4 Show Modal Edit Product */
+        function showEditProductByIndex(index) {
+            var p = productList[index];
+            if (!p) return;
+
+            $('#updateProductInfoId').text("Product ID: " + p.productId);
+            $('#updateProductInfoName').text("Tên: " + p.productName);
+            $('#updateProductInfoPrice').text("Giá: " + Number(p.unitPrice).toLocaleString() + " đ (Giảm " + (p.discount || 0) + "%)");
+            $('#updateProductInfoQuantity').text("Số lượng: " + p.quantity);
+            $('#updateProductInfoCategory').text("Category: " + (p.category ? p.category.categoryName : 'N/A'));
+            $('#updateProductInfoImages').text("Ảnh: " + (p.images || 'Chưa có'));
+
+            $('#productId_up').val(p.productId);
+            $('#productName_up').val(p.productName);
+            $('#unitPrice_up').val(p.unitPrice);
+            $('#discount_up').val(p.discount != null ? p.discount : 0);
+            $('#quantity_up').val(p.quantity);
+            $('#description_up').val(p.description || '');
+            $('#status_up').val(p.status);
+            if (p.category) {
+                $('#categoryId_up_select').val(p.category.categoryId);
+            }
+            $('#imageFile_up').val('');
+
+            var modal = new bootstrap.Modal(document.getElementById('updateProductInfoModal'));
+            modal.show();
+        }
+
+        /* 2.5 Submit Update Product (PUT) */
+        $("form#updateProductForm").submit(function (e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            if (!formData.get('discount')) {
+                formData.set('discount', '0');
+            }
+
+            $.ajax({
+                url: contextPath + '/api/product/updateProduct',
+                type: 'POST',
+                data: formData,
+                success: function (data) {
+                    alert('Cập nhật Product thành công!');
+                    bootstrap.Modal.getInstance(document.getElementById('updateProductInfoModal')).hide();
+                    loadProducts();
+                },
+                error: function (xhr) {
+                    alert('Lỗi: ' + xhr.responseText);
+                },
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+        });
+
+        /* 2.6 Delete Product (DELETE) */
+        function deleteProduct(id) {
+            if (confirm('Bạn có chắc chắn muốn xóa Product ID: ' + id + ' không?')) {
+                $.ajax({
+                    type: "DELETE",
+                    url: contextPath + '/api/product/deleteProduct?productId=' + id,
+                    success: function (res) {
+                        alert('Xóa Product thành công!');
+                        loadProducts();
+                    },
+                    error: function (xhr) {
+                        alert('Lỗi xóa Product: ' + xhr.responseText);
+                    }
+                });
+            }
+        }
+    </script>
+
+</body>
+
+</html>

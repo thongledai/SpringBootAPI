@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Trang chủ</title>
+</head>
+<body>
+
+<div th:replace="~{common/header :: header}"></div>
+<h1>index: trang chủ</h1>
+<p><a th:href="@{/admin}">Vào Admin</a></p>
+
+<div th:replace="~{common/footer :: footer}"></div>
+
+</body>
+</html>
